@@ -8,23 +8,6 @@
 namespace brainfck
 {
 
-/// Throw away consecutive whitespace characters.
-static void
-chomp (std::istream &s)
-{
-  using std::begin;
-  using std::end;
-
-  static const int ws[] = { ' ', '\t', '\n', '\r' };
-  for (int c; (c = s.peek ()); )
-  {
-    if ((EOF == c) || (std::find (begin (ws), end (ws), c) == end (ws)))
-      break;
-
-    (void) s.get ();
-  }
-}
-
 /// Copies chars from @a input to @a output up to the delimeter, @a target.
 /// @note Disposes of the delimeter.
 ///
@@ -207,9 +190,7 @@ static int
 main ()
 {
   size_t input_count, line_count;
-  std::cin >> input_count >> line_count;
-
-  chomp (std::cin);
+  std::cin >> input_count >> line_count >> std::ws;
 
   std::stringstream input;
   size_t actual_input = read_until (std::cin, input, '$');
@@ -220,7 +201,7 @@ main ()
     return 1;
   }
 
-  chomp (std::cin);
+  std::cin >> std::ws;
 
   size_t lines = 0;
   std::vector <char> code;
