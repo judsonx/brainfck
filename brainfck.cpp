@@ -8,6 +8,8 @@
 namespace brainfck
 {
 
+static const size_t DEFAULT_MAX_OPERATIONS = 100000;
+
 /// Copies chars from @a input to @a output up to the delimeter, @a target.
 /// @note Disposes of the delimeter.
 ///
@@ -39,11 +41,16 @@ public:
   context_t ();
 
   /// Executes BF code.
-  void
+  /// @throw std::runtime_error if the maximum number of operations is exceeded.
+  size_t
   execute (
     code_iterator_t code_begin, code_iterator_t code_end, std::istream &input,
     std::ostream &out
   );
+
+  /// Sets the maximum number of operations, and returns the old value.
+  size_t
+  set_max_operations (size_t max_operations);
 
 private:
   typedef std::vector <unsigned char> slot_container_t;
@@ -80,6 +87,8 @@ private:
 
   slot_container_t slots_;
   slot_container_t::iterator slot_;
+  size_t operation_count_max_;
+  size_t operation_count_;
 
   context_t (const context_t &) = delete;
   context_t & operator = (const context_t &) = delete;
@@ -88,19 +97,25 @@ private:
 } // anonymous namespace
 
 context_t::context_t ()
-: slots_   (1, 0),
-  slot_    (begin (slots_))
+: slots_               (1, 0),
+  slot_                (begin (slots_)),
+  operation_count_max_ (DEFAULT_MAX_OPERATIONS),
+  operation_count_     (0)
 {
 }
 
-void
+size_t
 context_t::execute (
   code_iterator_t code_begin, code_iterator_t code_end, std::istream &input,
   std::ostream &out )
 {
+  size_t operation_count_start = operation_count_;
   stash_container_t stash;
   for (auto cp = code_begin; cp != code_end; ++cp)
   {
+    if (++operation_count_ > operation_count_max_)
+      throw std::runtime_error ("max operations exceeded");
+
     switch (*cp)
     {
     case '+': increment (); break;
@@ -113,6 +128,15 @@ context_t::execute (
     case ']': end_loop (&cp, &stash); break;
     }
   }
+
+  return operation_count_ - operation_count_start;
+}
+
+size_t
+context_t::set_max_operations (size_t max_operations)
+{
+  std::swap (operation_count_max_, max_operations);
+  return max_operations;
 }
 
 void
@@ -223,7 +247,7 @@ main ()
   }
 
   context_t c;
-  c.execute (begin (code), end (code), input, std::cout);
+  (void) c.execute (begin (code), end (code), input, std::cout);
 
   std::cout << std::endl;
   return 0;
