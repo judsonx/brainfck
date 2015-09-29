@@ -41,7 +41,8 @@ public:
   context_t ();
 
   /// Executes BF code.
-  /// @throw std::runtime_error if the maximum number of operations is exceeded.
+  /// @throw std::runtime_error if the maximum number of operations is
+  /// exceeded, or if a bracket mismatch is detected.
   size_t
   execute (
     code_iterator_t code_begin, code_iterator_t code_end, std::istream &input,
@@ -75,11 +76,13 @@ private:
   void
   read_in (std::istream &input);
 
+  /// @throw std::runtime_error on bracket mismatch
   void
   start_loop (
     code_iterator_t *it, code_iterator_t code_end, stash_container_t *stash
   );
 
+  /// @throw std::runtime_error on bracket mismatch
   void
   end_loop (code_iterator_t *it, stash_container_t *stash);
 
@@ -199,11 +202,16 @@ context_t::start_loop (
     if (']' == **it)
       return;
   }
+
+  throw std::runtime_error ("bracket mismatch (no closing)");
 }
 
 void
 context_t::end_loop (code_iterator_t *it, stash_container_t *stash)
 {
+  if (stash->empty ())
+    throw std::runtime_error ("bracket mismatch (no opening)");
+
   if (*slot_)
     *it = stash->top ();
   else
