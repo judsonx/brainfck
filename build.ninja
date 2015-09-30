@@ -1,0 +1,6 @@
+cflags = -Wall -std=c++14
+
+rule cxx
+  command = g++ $cflags $in -o $out
+
+build bin/brainfck: cxx src/brainfck.cpp
